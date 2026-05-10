@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\xampp\\\\htdocs\\\\billar\" -Recurse -Force)",
+      "Bash(Select-Object -Property FullName, PSIsContainer)",
+      "Bash(Sort-Object FullName)",
+      "Bash(Format-Table -AutoSize)",
+      "Bash(php --version)",
+      "Bash(composer --version)",
+      "Bash(npm --version)",
+      "Bash(composer create-project *)",
+      "PowerShell(Move-Item *)",
+      "Bash(composer require *)",
+      "Bash(composer remove *)",
+      "PowerShell(Set-Content *)",
+      "Bash(php -m)",
+      "Bash(php artisan *)",
+      "Bash(mysql -u root -e \"CREATE DATABASE IF NOT EXISTS billar CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\")",
+      "PowerShell(& \"C:\\\\xampp\\\\mysql\\\\bin\\\\mysql.exe\" -u root -e \"CREATE DATABASE IF NOT EXISTS billar CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\" 2>&1; Write-Output \"Done\")",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(php -r \"require 'vendor/autoload.php'; echo 'OK';\")",
+      "Bash(Get-Content *)",
+      "PowerShell(& \"C:\\\\xampp\\\\mysql\\\\bin\\\\mysql.exe\" -u root billar -e \"SELECT id, name, map_x, map_y, map_width, map_height, is_active, branch_id FROM game_tables LIMIT 10;\")",
+      "PowerShell(& \"C:\\\\xampp\\\\mysql\\\\bin\\\\mysql.exe\" -u root billar -e \"SELECT id, name FROM branches LIMIT 5;\")",
+      "PowerShell(& \"C:\\\\xampp\\\\mysql\\\\bin\\\\mysql.exe\" -u root billar -e \"DESCRIBE orders;\")",
+      "PowerShell(New-Item *)",
+      "Bash(Remove-Item *)",
+      "PowerShell(Get-NetIPAddress -AddressFamily IPv4 | Where-Object {$_.InterfaceAlias -notmatch 'Loopback|vEthernet|WSL'} | Select-Object IPAddress, InterfaceAlias)",
+      "PowerShell(& \"C:\\\\xampp\\\\mysql\\\\bin\\\\mysql.exe\" -u root billar -e \"SELECT id, game_table_id, status, branch_id, created_at FROM orders WHERE game_table_id IS NULL AND status='open' ORDER BY id DESC LIMIT 10;\")",
+      "PowerShell(& \"C:\\\\xampp\\\\mysql\\\\bin\\\\mysql.exe\" -u root billar -e \"SELECT id, name FROM branches;\")",
+      "PowerShell(& \"C:\\\\xampp\\\\mysql\\\\bin\\\\mysql.exe\" -u root billar -e \"UPDATE orders SET branch_id=1 WHERE branch_id IS NULL; SELECT ROW_COUNT\\(\\) as updated;\")"
+    ]
+  }
+}
