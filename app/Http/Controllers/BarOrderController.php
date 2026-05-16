@@ -33,14 +33,18 @@ class BarOrderController extends Controller
 
         $order->load('items', 'createdBy');
 
-        $products = Product::where('is_active', true)
+        $products = Product::with('category')
+            ->where('is_active', true)
             ->orderBy('name')
-            ->get(['id', 'name', 'price', 'is_beer_product'])
+            ->get()
             ->map(fn ($p) => [
                 'id' => $p->id,
                 'name' => $p->name,
                 'price' => (float) $p->price,
                 'is_beer_product' => (bool) $p->is_beer_product,
+                'category_id' => $p->product_category_id,
+                'category_name' => $p->category?->name ?? 'Otros',
+                'category_sort' => $p->category?->sort_order ?? 99,
             ])
             ->toArray();
 
@@ -72,6 +76,7 @@ class BarOrderController extends Controller
                     'quantity' => $item->quantity,
                     'subtotal' => (float) $item->subtotal,
                     'notes' => $item->notes,
+                    'status' => $item->status ?? 'pendiente',
                 ]),
             ],
         ]);
@@ -144,6 +149,15 @@ class BarOrderController extends Controller
         ]);
 
         $order->recalculateTotal();
+
+        return back();
+    }
+
+    public function deliverItem(Order $order, int $itemId)
+    {
+        abort_if($order->game_table_id !== null, 404);
+
+        $order->items()->findOrFail($itemId)->update(['status' => 'entregado']);
 
         return back();
     }

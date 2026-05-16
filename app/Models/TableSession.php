@@ -20,11 +20,15 @@ class TableSession extends Model
         'time_cost',
         'status',
         'notes',
+        'paused_at',
+        'paused_minutes',
+        'branch_id',
     ];
 
     protected $casts = [
         'opened_at' => 'datetime',
         'closed_at' => 'datetime',
+        'paused_at' => 'datetime',
         'hourly_rate' => 'decimal:2',
         'time_cost' => 'decimal:2',
     ];

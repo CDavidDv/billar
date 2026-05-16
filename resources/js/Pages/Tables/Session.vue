@@ -8,6 +8,20 @@
                 Imprimir ticket
             </button>
             <button
+                v-if="session.status === 'active'"
+                @click="togglePause"
+                class="px-4 py-2 rounded-lg border border-amber-600 text-amber-400 text-sm font-semibold hover:bg-amber-900/30 transition-colors"
+            >
+                ⏸ Pausar
+            </button>
+            <button
+                v-if="session.status === 'paused'"
+                @click="togglePause"
+                class="px-4 py-2 rounded-lg bg-amber-600 text-white text-sm font-semibold hover:bg-amber-500 transition-colors animate-pulse"
+            >
+                ▶ Reanudar
+            </button>
+            <button
                 @click="showCloseModal = true"
                 class="px-4 py-2 rounded-lg bg-red-700 text-white text-sm font-semibold hover:bg-red-600 transition-colors"
             >
@@ -21,8 +35,10 @@
                 <!-- Timer card -->
                 <div class="bg-neutral-800 rounded-xl border border-neutral-700 p-5">
                     <p class="text-neutral-400 text-sm mb-1">{{ table.type_label }} · {{ table.name }}</p>
-                    <p class="text-amber-400 font-mono text-5xl font-bold tracking-tight mb-3">
+                    <p class="font-mono text-5xl font-bold tracking-tight mb-3"
+                       :class="session.status === 'paused' ? 'text-amber-600' : 'text-amber-400'">
                         {{ elapsedDisplay }}
+                        <span v-if="session.status === 'paused'" class="text-lg align-middle ml-1">⏸</span>
                     </p>
                     <div class="space-y-1 text-sm">
                         <div class="flex justify-between">
@@ -73,20 +89,46 @@
             <!-- Right: items -->
             <div class="flex-1 flex flex-col gap-4 min-w-0">
                 <!-- Add item -->
-                <div class="bg-neutral-800 rounded-xl border border-neutral-700 p-4">
-                    <p class="text-white font-semibold mb-3">Agregar producto</p>
-                    <ProductSearch
+                <div class="bg-neutral-800 rounded-xl border border-neutral-700 p-4"
+                     :class="quickMode ? 'flex-1 flex flex-col min-h-0' : ''">
+                    <div class="flex items-center justify-between mb-3">
+                        <p class="text-white font-semibold">Agregar producto</p>
+                        <div class="flex rounded-lg overflow-hidden border border-neutral-700 text-xs font-semibold">
+                            <button
+                                @click="quickMode = false"
+                                class="px-3 py-1.5 transition-colors"
+                                :class="!quickMode ? 'bg-green-700 text-white' : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'"
+                            >Búsqueda</button>
+                            <button
+                                @click="quickMode = true"
+                                class="px-3 py-1.5 transition-colors"
+                                :class="quickMode ? 'bg-green-700 text-white' : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'"
+                            >⚡ Rápido</button>
+                        </div>
+                    </div>
+
+                    <template v-if="!quickMode">
+                        <ProductSearch
+                            :products="props.products"
+                            v-model:productName="itemForm.product_name"
+                            v-model:unitPrice="itemForm.unit_price"
+                            v-model:quantity="itemForm.quantity"
+                            :disabled="itemForm.processing || beerForm.processing"
+                            @submit="submitItem"
+                            @select="onProductSelect"
+                        />
+                        <div v-if="itemForm.hasErrors" class="mt-2 text-red-400 text-xs">
+                            Llena nombre y precio correctamente.
+                        </div>
+                    </template>
+
+                    <QuickOrderGrid
+                        v-else
                         :products="props.products"
-                        v-model:productName="itemForm.product_name"
-                        v-model:unitPrice="itemForm.unit_price"
-                        v-model:quantity="itemForm.quantity"
                         :disabled="itemForm.processing || beerForm.processing"
-                        @submit="submitItem"
+                        class="flex-1 min-h-0"
                         @select="onProductSelect"
                     />
-                    <div v-if="itemForm.hasErrors" class="mt-2 text-red-400 text-xs">
-                        Llena nombre y precio correctamente.
-                    </div>
                 </div>
 
                 <!-- Items list -->
@@ -104,10 +146,22 @@
 
                     <div v-else class="divide-y divide-neutral-700">
                         <div
-                            v-for="item in order.items"
+                            v-for="item in sortedItems"
                             :key="item.id"
-                            class="flex items-center gap-3 px-4 py-3 hover:bg-neutral-750 group"
+                            class="flex items-center gap-3 px-4 py-3 hover:bg-neutral-750 group transition-opacity"
+                            :class="item.status === 'entregado' ? 'opacity-50' : ''"
                         >
+                            <!-- Badge estado -->
+                            <button
+                                @click="item.status === 'pendiente' && deliverItem(item.id)"
+                                class="flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold transition-colors"
+                                :class="item.status === 'entregado'
+                                    ? 'bg-green-900/40 text-green-400 cursor-default'
+                                    : 'bg-amber-900/40 text-amber-400 hover:bg-green-900/40 hover:text-green-400 cursor-pointer'"
+                                :title="item.status === 'pendiente' ? 'Marcar como entregado' : 'Entregado'"
+                            >
+                                {{ item.status === 'entregado' ? '✓ Entregado' : '⏳ Pendiente' }}
+                            </button>
                             <div class="flex-1 min-w-0">
                                 <p class="text-white text-sm font-medium truncate">{{ item.product_name }}</p>
                                 <p v-if="item.notes" class="text-neutral-500 text-xs truncate">{{ item.notes }}</p>
@@ -239,11 +293,12 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useForm } from '@inertiajs/vue3'
+import { useForm, router } from '@inertiajs/vue3'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import ProductSearch from '@/Components/UI/ProductSearch.vue'
 import CaguamaModal from '@/Components/UI/CaguamaModal.vue'
+import QuickOrderGrid from '@/Components/UI/QuickOrderGrid.vue'
 
 const props = defineProps({
     session: Object,
@@ -259,13 +314,22 @@ const props = defineProps({
 const showCloseModal = ref(false)
 const showCaguamaModal = ref(false)
 const selectedBeerProduct = ref(null)
+const quickMode = ref(false)
 const now = ref(Date.now())
 let ticker = null
 
-const elapsedSeconds = computed(() => Math.floor((now.value - new Date(props.session.opened_at).getTime()) / 1000))
+// Active seconds = total elapsed - paused minutes from server - current pause if active
+const elapsedSeconds = computed(() => {
+    const total = Math.floor((now.value - new Date(props.session.opened_at).getTime()) / 1000)
+    const serverPausedSecs = (props.billing?.paused_minutes ?? 0) * 60
+    return Math.max(0, total - serverPausedSecs)
+})
 
 const elapsedDisplay = computed(() => {
-    const s = elapsedSeconds.value
+    // If paused, freeze display at last known billing minutes
+    const s = props.session.status === 'paused'
+        ? (props.billing?.minutes ?? 0) * 60
+        : elapsedSeconds.value
     const h = Math.floor(s / 3600)
     const m = Math.floor((s % 3600) / 60)
     const sec = s % 60
@@ -277,8 +341,18 @@ const estimatedTimeCost = computed(() => {
     if (props.session.billing_type === 'precio_fijo') {
         return props.session.hourly_rate
     }
-    const hours = elapsedSeconds.value / 3600
+    const s = props.session.status === 'paused'
+        ? (props.billing?.minutes ?? 0) * 60
+        : elapsedSeconds.value
+    const hours = s / 3600
     return Math.round(hours * props.session.hourly_rate * 100) / 100
+})
+
+const sortedItems = computed(() => {
+    return [...props.order.items].sort((a, b) => {
+        if (a.status === b.status) return 0
+        return a.status === 'pendiente' ? -1 : 1
+    })
 })
 
 const itemForm = useForm({
@@ -342,6 +416,18 @@ function submitBeerItem(data) {
 
 function removeItem(itemId) {
     useForm({}).delete(route('tables.sessions.items.destroy', [props.session.id, itemId]))
+}
+
+function deliverItem(itemId) {
+    router.patch(route('tables.sessions.items.deliver', [props.session.id, itemId]))
+}
+
+function togglePause() {
+    if (props.session.status === 'active') {
+        router.post(route('tables.sessions.pause', props.session.id))
+    } else if (props.session.status === 'paused') {
+        router.post(route('tables.sessions.resume', props.session.id))
+    }
 }
 
 function submitClose() {

@@ -15,6 +15,7 @@ class Caguama extends Model
         'opened_by',
         'status',
         'notes',
+        'branch_id',
     ];
 
     protected $casts = [

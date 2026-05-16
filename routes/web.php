@@ -67,6 +67,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/sessions/{session}/items', [TableController::class, 'addItem'])->name('tables.sessions.items.store');
     Route::post('/sessions/{session}/beer-items', [TableController::class, 'addBeerItem'])->name('tables.sessions.beer-items.store');
     Route::delete('/sessions/{session}/items/{itemId}', [TableController::class, 'removeItem'])->name('tables.sessions.items.destroy');
+    Route::patch('/sessions/{session}/items/{itemId}/deliver', [TableController::class, 'deliverItem'])->name('tables.sessions.items.deliver');
+    Route::post('/sessions/{session}/pause', [TableController::class, 'pauseSession'])->name('tables.sessions.pause');
+    Route::post('/sessions/{session}/resume', [TableController::class, 'resumeSession'])->name('tables.sessions.resume');
     Route::post('/sessions/{session}/close', [TableController::class, 'closeSession'])->name('tables.sessions.close');
 
     // Órdenes barra (sin mesa)
@@ -75,6 +78,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/bar-orders/{order}/items', [BarOrderController::class, 'addItem'])->name('bar-orders.items.store');
     Route::post('/bar-orders/{order}/beer-items', [BarOrderController::class, 'addBeerItem'])->name('bar-orders.beer-items.store');
     Route::delete('/bar-orders/{order}/items/{itemId}', [BarOrderController::class, 'removeItem'])->name('bar-orders.items.destroy');
+    Route::patch('/bar-orders/{order}/items/{itemId}/deliver', [BarOrderController::class, 'deliverItem'])->name('bar-orders.items.deliver');
     Route::post('/bar-orders/{order}/close', [BarOrderController::class, 'close'])->name('bar-orders.close');
     Route::post('/bar-orders/{order}/cancel', [BarOrderController::class, 'cancel'])->name('bar-orders.cancel');
 

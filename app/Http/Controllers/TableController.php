@@ -115,6 +115,7 @@ class TableController extends Controller
                 'hourly_rate' => (float) $session->hourly_rate,
                 'notes' => $session->notes,
                 'opened_by' => $session->openedBy?->name,
+                'status' => $session->status,
             ],
             'table' => [
                 'id' => $session->table->id,
@@ -132,6 +133,7 @@ class TableController extends Controller
                     'quantity' => $item->quantity,
                     'subtotal' => (float) $item->subtotal,
                     'notes' => $item->notes,
+                    'status' => $item->status ?? 'pendiente',
                 ]),
             ],
             'billing' => $billing,
@@ -152,14 +154,18 @@ class TableController extends Controller
 
     private function productList(): array
     {
-        return Product::where('is_active', true)
+        return Product::with('category')
+            ->where('is_active', true)
             ->orderBy('name')
-            ->get(['id', 'name', 'price', 'is_beer_product'])
+            ->get()
             ->map(fn ($p) => [
                 'id' => $p->id,
                 'name' => $p->name,
                 'price' => (float) $p->price,
                 'is_beer_product' => (bool) $p->is_beer_product,
+                'category_id' => $p->product_category_id,
+                'category_name' => $p->category?->name ?? 'Otros',
+                'category_sort' => $p->category?->sort_order ?? 99,
             ])
             ->toArray();
     }
@@ -249,6 +255,36 @@ class TableController extends Controller
         $item->delete();
 
         $session->order->recalculateTotal();
+
+        return back();
+    }
+
+    public function deliverItem(TableSession $session, int $itemId)
+    {
+        $item = $session->order->items()->findOrFail($itemId);
+        $item->update(['status' => 'entregado']);
+
+        return back();
+    }
+
+    public function pauseSession(TableSession $session)
+    {
+        if ($session->status !== 'active') {
+            return back()->withErrors(['session' => 'La sesión no está activa.']);
+        }
+
+        app(SessionBillingService::class)->pauseSession($session);
+
+        return back();
+    }
+
+    public function resumeSession(TableSession $session)
+    {
+        if ($session->status !== 'paused') {
+            return back()->withErrors(['session' => 'La sesión no está pausada.']);
+        }
+
+        app(SessionBillingService::class)->resumeSession($session);
 
         return back();
     }

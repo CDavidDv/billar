@@ -29,7 +29,10 @@
       "PowerShell(Get-NetIPAddress -AddressFamily IPv4 | Where-Object {$_.InterfaceAlias -notmatch 'Loopback|vEthernet|WSL'} | Select-Object IPAddress, InterfaceAlias)",
       "PowerShell(& \"C:\\\\xampp\\\\mysql\\\\bin\\\\mysql.exe\" -u root billar -e \"SELECT id, game_table_id, status, branch_id, created_at FROM orders WHERE game_table_id IS NULL AND status='open' ORDER BY id DESC LIMIT 10;\")",
       "PowerShell(& \"C:\\\\xampp\\\\mysql\\\\bin\\\\mysql.exe\" -u root billar -e \"SELECT id, name FROM branches;\")",
-      "PowerShell(& \"C:\\\\xampp\\\\mysql\\\\bin\\\\mysql.exe\" -u root billar -e \"UPDATE orders SET branch_id=1 WHERE branch_id IS NULL; SELECT ROW_COUNT\\(\\) as updated;\")"
+      "PowerShell(& \"C:\\\\xampp\\\\mysql\\\\bin\\\\mysql.exe\" -u root billar -e \"UPDATE orders SET branch_id=1 WHERE branch_id IS NULL; SELECT ROW_COUNT\\(\\) as updated;\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\xampp\\\\htdocs\\\\billar\" -Directory)",
+      "Bash(Select-Object Name)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\xampp\\\\htdocs\\\\billar\" | Where-Object {$_.PSIsContainer} | ForEach-Object {$_.Name})"
     ]
   }
 }
